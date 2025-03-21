@@ -16,6 +16,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import javafx.application.Platform;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.util.Duration;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -53,20 +61,16 @@ public class GUI extends JFrame {
         reproductor = new GestionCanciones();
         indiceCancionActual = -1;
 
-        // Configuración de la ventana
         setTitle("Reproductor de Música");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Panel principal
         JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Panel de controles
         JPanel panelControles = new JPanel(new FlowLayout());
 
-        // Nuevos botones para navegación
         btnPrevious = new JButton("<<<");
         btnPlay = new JButton("Play");
         btnPause = new JButton("Pause");
@@ -83,52 +87,42 @@ public class GUI extends JFrame {
         panelControles.add(btnAdd);
         panelControles.add(btnRemove);
 
-        // Panel de información
         JPanel panelInfo = new JPanel(new BorderLayout());
 
-        // Imagen de la canción
         labelImagen = new JLabel();
         labelImagen.setPreferredSize(new Dimension(200, 200));
         labelImagen.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         labelImagen.setHorizontalAlignment(JLabel.CENTER);
 
-        // Información de la canción
         labelInfoCancion = new JLabel("No hay canción seleccionada");
         labelInfoCancion.setHorizontalAlignment(JLabel.CENTER);
 
         panelInfo.add(labelImagen, BorderLayout.CENTER);
         panelInfo.add(labelInfoCancion, BorderLayout.SOUTH);
 
-        // Lista de reproducción
         modeloLista = new DefaultListModel<>();
         listaCanciones = new JList<>(modeloLista);
         listaCanciones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scrollPane = new JScrollPane(listaCanciones);
         scrollPane.setPreferredSize(new Dimension(300, 400));
 
-        // Añadir componentes al panel principal
         panelPrincipal.add(panelControles, BorderLayout.SOUTH);
         panelPrincipal.add(panelInfo, BorderLayout.CENTER);
         panelPrincipal.add(scrollPane, BorderLayout.EAST);
 
-        // Añadir panel principal a la ventana
         add(panelPrincipal);
 
-        // Configurar eventos
         configurarEventos();
 
-        // Mostrar ventana
         setVisible(true);
     }
 
     private void configurarEventos() {
-        // Evento para botón Play
         btnPlay.addActionListener(e -> {
             if (indiceCancionActual >= 0) {
                 reproductor.play(listaReproduccion.obtener(indiceCancionActual).getRutaArchivo());
                 actualizarInterfazReproduccion();
             } else if (modeloLista.size() > 0) {
-                // Si no hay canción seleccionada pero hay canciones en la lista, reproducir la primera
                 indiceCancionActual = 0;
                 listaCanciones.setSelectedIndex(indiceCancionActual);
                 mostrarInformacionCancion(listaReproduccion.obtener(indiceCancionActual));
@@ -139,7 +133,6 @@ public class GUI extends JFrame {
             }
         });
 
-        // Evento para botón Pause
         btnPause.addActionListener(e -> {
             if (reproductor.isReproduciendo()) {
                 reproductor.pause();
@@ -150,28 +143,23 @@ public class GUI extends JFrame {
             }
         });
 
-        // Evento para botón Stop
         btnStop.addActionListener(e -> {
             reproductor.stop();
             btnPause.setText("Pause");
         });
 
-        // Evento para botón Next
         btnNext.addActionListener(e -> {
             siguienteCancion();
         });
 
-        // Evento para botón Previous
         btnPrevious.addActionListener(e -> {
             cancionAnterior();
         });
 
-        // Evento para botón Add
         btnAdd.addActionListener(e -> {
             agregarCancion();
         });
 
-        // Evento para botón Remove
         btnRemove.addActionListener(e -> {
             int indiceSeleccionado = listaCanciones.getSelectedIndex();
             if (indiceSeleccionado >= 0) {
@@ -195,7 +183,6 @@ public class GUI extends JFrame {
             }
         });
 
-        // Evento para seleccionar canción de la lista
         listaCanciones.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int indiceSeleccionado = listaCanciones.getSelectedIndex();
@@ -206,7 +193,6 @@ public class GUI extends JFrame {
             }
         });
 
-        // Evento doble clic para reproducir canción
         listaCanciones.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -225,18 +211,14 @@ public class GUI extends JFrame {
 
     private void siguienteCancion() {
         if (modeloLista.size() > 0) {
-            // Detener la reproducción actual
             reproductor.stop();
 
-            // Calcular el índice de la siguiente canción
             if (indiceCancionActual < modeloLista.size() - 1) {
                 indiceCancionActual++;
             } else {
-                // Volver al principio si estamos en la última canción
                 indiceCancionActual = 0;
             }
 
-            // Seleccionar y reproducir la nueva canción
             listaCanciones.setSelectedIndex(indiceCancionActual);
             mostrarInformacionCancion(listaReproduccion.obtener(indiceCancionActual));
             reproductor.play(listaReproduccion.obtener(indiceCancionActual).getRutaArchivo());
@@ -248,18 +230,14 @@ public class GUI extends JFrame {
 
     private void cancionAnterior() {
         if (modeloLista.size() > 0) {
-            // Detener la reproducción actual
             reproductor.stop();
 
-            // Calcular el índice de la canción anterior
             if (indiceCancionActual > 0) {
                 indiceCancionActual--;
             } else {
-                // Ir a la última canción si estamos en la primera
                 indiceCancionActual = modeloLista.size() - 1;
             }
 
-            // Seleccionar y reproducir la nueva canción
             listaCanciones.setSelectedIndex(indiceCancionActual);
             mostrarInformacionCancion(listaReproduccion.obtener(indiceCancionActual));
             reproductor.play(listaReproduccion.obtener(indiceCancionActual).getRutaArchivo());
@@ -270,7 +248,6 @@ public class GUI extends JFrame {
     }
 
     private void actualizarInterfazReproduccion() {
-        // Resetear texto del botón de pausa
         btnPause.setText("Pause");
     }
 
@@ -282,10 +259,53 @@ public class GUI extends JFrame {
         if (resultado == JFileChooser.APPROVE_OPTION) {
             File archivoSeleccionado = fileChooser.getSelectedFile();
 
-            // Obtener información de la canción mediante diálogo
+            AtomicReference<String> duracionDetectada = new AtomicReference<>("3:00");
+            try {
+                if (!Platform.isFxApplicationThread()) {
+                    try {
+                        Platform.startup(() -> {
+                        });
+                    } catch (IllegalStateException e) {
+                    }
+                }
+
+                Media media = new Media(archivoSeleccionado.toURI().toString());
+                MediaPlayer tempPlayer = new MediaPlayer(media);
+
+                final AtomicBoolean listo = new AtomicBoolean(false);
+                final CountDownLatch latch = new CountDownLatch(1);
+
+                tempPlayer.setOnReady(() -> {
+                    Platform.runLater(() -> {
+                        Duration duracion = media.getDuration();
+                        double segundosTotales = duracion.toSeconds();
+                        int minutos = (int) (segundosTotales / 60);
+                        int segundos = (int) (segundosTotales % 60);
+                        duracionDetectada.set(String.format("%d:%02d", minutos, segundos));
+                        listo.set(true);
+                        latch.countDown();
+                        tempPlayer.dispose();
+                    });
+                });
+
+                try {
+                    latch.await(3, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    System.err.println("Interrupción durante la espera de metadatos: " + e.getMessage());
+                }
+
+                if (!listo.get()) {
+                    tempPlayer.dispose();
+                }
+
+            } catch (Exception e) {
+                System.err.println("Error al obtener duración del archivo: " + e.getMessage());
+            }
+
             JTextField campoNombre = new JTextField(archivoSeleccionado.getName().replaceFirst("[.][^.]+$", ""));
             JTextField campoArtista = new JTextField();
-            JTextField campoDuracion = new JTextField("3:00");  // Valor predeterminado
+            JTextField campoDuracion = new JTextField();
+            campoDuracion.setText(duracionDetectada.get());
             JTextField campoGenero = new JTextField();
             JLabel labelImagenSeleccionada = new JLabel("No se ha seleccionado imagen");
             JButton btnSeleccionarImagen = new JButton("Seleccionar imagen");
@@ -323,13 +343,11 @@ public class GUI extends JFrame {
                 String duracion = campoDuracion.getText().trim();
                 String genero = campoGenero.getText().trim();
 
-                // Validar datos
                 if (nombre.isEmpty() || artista.isEmpty() || duracion.isEmpty() || genero.isEmpty()) {
                     JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                // Crear imagen
                 ImageIcon icono = null;
                 if (imagenSeleccionada[0] != null) {
                     try {
@@ -338,15 +356,12 @@ public class GUI extends JFrame {
                         icono = new ImageIcon(imagenRedimensionada);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(this, "Error al cargar la imagen: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                        // Usar imagen predeterminada en caso de error
                         icono = crearImagenPredeterminada();
                     }
                 } else {
-                    // Usar imagen predeterminada
                     icono = crearImagenPredeterminada();
                 }
 
-                // Crear y agregar la canción
                 Cancion nuevaCancion = new Cancion(nombre, artista, duracion, icono, genero, archivoSeleccionado.getAbsolutePath());
                 listaReproduccion.agregar(nuevaCancion);
                 actualizarListaReproduccion();
@@ -355,15 +370,12 @@ public class GUI extends JFrame {
     }
 
     private ImageIcon crearImagenPredeterminada() {
-        // Crear una imagen predeterminada si no hay archivo disponible
         BufferedImage bufferedImage = new BufferedImage(200, 200, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bufferedImage.createGraphics();
 
-        // Fondo gris
         g2d.setColor(Color.LIGHT_GRAY);
         g2d.fillRect(0, 0, 200, 200);
 
-        // Dibujar un símbolo de música
         g2d.setColor(Color.BLACK);
         g2d.setFont(new Font("Arial", Font.BOLD, 80));
         g2d.drawString("♪", 75, 100);
