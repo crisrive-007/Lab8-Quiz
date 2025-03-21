@@ -31,23 +31,28 @@ public class ListaEnlazada {
         tamaño++;
     }
     
-    public boolean elimianr(int indice) {
-        if(indice < 0 || indice >= tamaño) {
-            return false;
+    public void eliminar(int indice) {
+        if (indice < 0 || indice >= tamaño || cabeza == null) {
+            return;
         }
-        
-        if(indice == 0) {
+
+        if (indice == 0) {
             cabeza = cabeza.siguiente;
             tamaño--;
+            return;
         }
-        
-        Nodo actual = cabeza;
+
+        Nodo anterior = cabeza;
         for (int i = 0; i < indice - 1; i++) {
-            actual = actual.siguiente;
+            anterior = anterior.siguiente;
         }
-        actual.siguiente = actual.siguiente.siguiente;
+
+        if (anterior.siguiente == null) {
+            return;
+        }
+
+        anterior.siguiente = anterior.siguiente.siguiente;
         tamaño--;
-        return true;
     }
     
     public Cancion obtener(int indice) {
