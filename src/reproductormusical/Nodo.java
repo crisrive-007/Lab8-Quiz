@@ -9,5 +9,11 @@ package reproductormusical;
  * @author river
  */
 public class Nodo {
-    
+    public Cancion cancion;
+    public Nodo siguiente;
+
+    public Nodo(Cancion cancion) {
+        this.cancion = cancion;
+        this.siguiente = null;
+    }
 }
